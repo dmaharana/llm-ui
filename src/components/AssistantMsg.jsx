@@ -1,10 +1,27 @@
-import { Avatar, Box, HStack, Text } from "@chakra-ui/react";
+import {
+  Avatar,
+  Box,
+  Button,
+  HStack,
+  Text,
+  useClipboard,
+} from "@chakra-ui/react";
+import { CopyIcon, CheckIcon, RepeatIcon } from "@chakra-ui/icons";
 import ReactMarkdown from "markdown-to-jsx";
 import ChakraUIRenderer from "chakra-ui-markdown-renderer";
 
 import avatarImage from "../assets/assistant.png"; // Update the path to point to your avatar image
 
-export function AssistantMsg({ msg }) {
+export function AssistantMsg({
+  msg,
+  name,
+  convId,
+  handleRepeat,
+  waitingResponse,
+}) {
+  // const name = "Assistant";
+  const { hasCopied, onCopy } = useClipboard(msg);
+
   return (
     <Box bg={"gray.50"} p={2} borderRadius={"md"} mb={2} w={"100%"}>
       <HStack>
@@ -17,13 +34,48 @@ export function AssistantMsg({ msg }) {
           mr={3}
           bg={"red"}
         />
-        <ReactMarkdown
-          components={ChakraUIRenderer()}
-          children={msg}
-          skipHtml
-          align="left"
-        />
+        <Box w={"100%"} align={"start"}>
+          <Text
+            fontWeight={"bold"}
+            mb={1}
+            fontSize={"xs"}
+            color={"gray.600"}
+            align={"start"}
+          >
+            {name}
+          </Text>
+          <ReactMarkdown
+            components={ChakraUIRenderer()}
+            children={msg}
+            skipHtml
+            align="left"
+          />
+        </Box>
       </HStack>
+      {!waitingResponse ? (
+        <HStack spacing={1} justifyContent={"flex-end"}>
+          <Button
+            size="xs"
+            colorScheme="blue"
+            onClick={() => handleRepeat(convId)}
+            ml={2}
+            disabled={!hasCopied}
+            // align={"end"}
+            leftIcon={<RepeatIcon />}
+            variant="ghost"
+          />
+          <Button
+            size="xs"
+            colorScheme="blue"
+            onClick={onCopy}
+            ml={2}
+            disabled={hasCopied}
+            // align={"end"}
+            leftIcon={hasCopied ? <CheckIcon /> : <CopyIcon />}
+            variant="ghost"
+          />
+        </HStack>
+      ) : null}
     </Box>
   );
 }

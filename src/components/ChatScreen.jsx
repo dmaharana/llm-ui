@@ -3,10 +3,50 @@ import { Box, Button, HStack, Text, Textarea, VStack } from "@chakra-ui/react";
 import { ChatIcon } from "@chakra-ui/icons";
 import { UserMsg } from "./UserMsg";
 import { AssistantMsg } from "./AssistantMsg";
+import ModelSelect from "./ModelSelect";
 
 export default function ChatScreen() {
   const [conversation, setConversation] = useState({});
   const [query, setQuery] = useState("");
+  const [model, setModel] = useState("");
+  const initialAssistantMessage = "Assistant is typing...";
+  const [waitingResponse, setWaitingResponse] = useState(false);
+
+  // console.log(model);
+
+  // handle resubmit for a message with given id
+  const handleResubmit = async (id) => {
+    // find the message with the given id
+    const message = conversation.find((msg) => msg.id === id);
+    const newMessage = {
+      id: id,
+      user: message.user,
+      model: model,
+      assistant: initialAssistantMessage,
+    };
+
+    setConversation((p) =>
+      p.map((m) =>
+        m.id === id
+          ? { ...m, assistant: newMessage.assistant, model: newMessage.model }
+          : m
+      )
+    );
+
+    callLlmService(newMessage);
+  };
+
+  const handleQueryUpdate = (id, newQuery) => {
+    const message = conversation.find((msg) => msg.id === id);
+
+    if (message) {
+      setConversation((conversation) =>
+        conversation.map((msg) =>
+          msg.id === id ? { ...msg, user: newQuery } : msg
+        )
+      );
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -17,7 +57,8 @@ export default function ChatScreen() {
     const newMessage = {
       id: newMsgId,
       user: query,
-      assistant: "Assistant is typing...",
+      model: model,
+      assistant: initialAssistantMessage,
     };
 
     if (conversation.length > 0) {
@@ -27,13 +68,23 @@ export default function ChatScreen() {
     }
     setQuery("");
 
+    callLlmService(newMessage);
+  };
+
+  const callLlmService = async (message) => {
+    console.log(conversation);
+    // get user query for the message id
+    const query = message.user;
+    const msgId = message.id;
+
     const reqBody = {
-      model: "llama3:latest",
+      model: model,
       prompt: query,
       stream: true,
     };
 
     try {
+      setWaitingResponse(true);
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -58,12 +109,18 @@ export default function ChatScreen() {
         // console.log(cJson);
         text += cJson["response"];
         setConversation((p) =>
-          p.map((m) => (m.id === newMsgId ? { ...m, assistant: text } : m))
+          p.map((m) => (m.id === msgId ? { ...m, assistant: text, model } : m))
         );
       }
     } catch (error) {
       console.error(error);
+    } finally {
+      setWaitingResponse(false);
     }
+  };
+
+  const handleClearChat = () => {
+    setConversation({});
   };
 
   return (
@@ -83,8 +140,22 @@ export default function ChatScreen() {
           {conversation.length > 0 ? (
             conversation.map((m, index) => (
               <>
-                {m.user && <UserMsg msg={m.user} />}
-                {m.assistant && <AssistantMsg msg={m.assistant} />}
+                {m.user && (
+                  <UserMsg
+                    msg={m.user}
+                    msgId={m.id}
+                    handleQueryUpdate={handleQueryUpdate}
+                  />
+                )}
+                {m.assistant && (
+                  <AssistantMsg
+                    msg={m.assistant}
+                    name={m.model}
+                    convId={m.id}
+                    handleRepeat={handleResubmit}
+                    waitingResponse={waitingResponse}
+                  />
+                )}
               </>
             ))
           ) : (
@@ -109,6 +180,12 @@ export default function ChatScreen() {
               onClick={(e) => handleSubmit(e)}
             >
               <ChatIcon />
+            </Button>
+          </HStack>
+          <HStack>
+            <ModelSelect model={model} setModel={setModel} />
+            <Button alignSelf={"flex-end"} onClick={handleClearChat}>
+              Clear
             </Button>
           </HStack>
         </Box>
