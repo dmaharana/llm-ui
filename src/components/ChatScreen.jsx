@@ -76,6 +76,7 @@ export default function ChatScreen() {
     // get user query for the message id
     const query = message.user;
     const msgId = message.id;
+    const startTime = new Date().getTime();
 
     const reqBody = {
       model: model,
@@ -108,8 +109,19 @@ export default function ChatScreen() {
         const cJson = JSON.parse(chunkValue);
         // console.log(cJson);
         text += cJson["response"];
+        const endTime = new Date().getTime();
+        const resTime = (endTime - startTime) / 1000;
         setConversation((p) =>
-          p.map((m) => (m.id === msgId ? { ...m, assistant: text, model } : m))
+          p.map((m) =>
+            m.id === msgId
+              ? {
+                  ...m,
+                  assistant: text,
+                  model,
+                  resTime: `${resTime.toFixed(2)}s`,
+                }
+              : m
+          )
         );
       }
     } catch (error) {
@@ -154,6 +166,7 @@ export default function ChatScreen() {
                     convId={m.id}
                     handleRepeat={handleResubmit}
                     waitingResponse={waitingResponse}
+                    resTime={m.resTime}
                   />
                 )}
               </>

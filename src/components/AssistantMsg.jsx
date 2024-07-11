@@ -18,6 +18,7 @@ export function AssistantMsg({
   convId,
   handleRepeat,
   waitingResponse,
+  resTime,
 }) {
   // const name = "Assistant";
   const { hasCopied, onCopy } = useClipboard(msg);
@@ -54,6 +55,11 @@ export function AssistantMsg({
       </HStack>
       {!waitingResponse ? (
         <HStack spacing={1} justifyContent={"flex-end"}>
+          {resTime ? (
+            <Text fontSize="sm" fontWeight="bold" color="blue">
+              {resTime}
+            </Text>
+          ) : null}
           <Button
             size="xs"
             colorScheme="blue"
