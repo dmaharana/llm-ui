@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   HStack,
+  Spinner,
   Text,
   useClipboard,
 } from "@chakra-ui/react";
@@ -19,8 +20,8 @@ export function AssistantMsg({
   handleRepeat,
   waitingResponse,
   resTime,
+  currentMsgId,
 }) {
-  // const name = "Assistant";
   const { hasCopied, onCopy } = useClipboard(msg);
 
   return (
@@ -53,35 +54,39 @@ export function AssistantMsg({
           />
         </Box>
       </HStack>
-      {!waitingResponse ? (
-        <HStack spacing={1} justifyContent={"flex-end"}>
-          {resTime ? (
-            <Text fontSize="sm" fontWeight="bold" color="blue">
-              {resTime}
-            </Text>
-          ) : null}
-          <Button
-            size="xs"
-            colorScheme="blue"
-            onClick={() => handleRepeat(convId)}
-            ml={2}
-            disabled={!hasCopied}
-            // align={"end"}
-            leftIcon={<RepeatIcon />}
-            variant="ghost"
-          />
-          <Button
-            size="xs"
-            colorScheme="blue"
-            onClick={onCopy}
-            ml={2}
-            disabled={hasCopied}
-            // align={"end"}
-            leftIcon={hasCopied ? <CheckIcon /> : <CopyIcon />}
-            variant="ghost"
-          />
-        </HStack>
-      ) : null}
+      <HStack spacing={1} justifyContent={"flex-end"}>
+        {resTime ? (
+          <Text fontSize="sm" fontWeight="bold" color="blue">
+            {resTime}
+          </Text>
+        ) : null}
+        <Button
+          size="xs"
+          colorScheme="blue"
+          onClick={() => handleRepeat(convId)}
+          ml={2}
+          isDisabled={waitingResponse || currentMsgId === convId}
+          // align={"end"}
+          leftIcon={
+            waitingResponse && currentMsgId === convId ? (
+              <Spinner size="xs" />
+            ) : (
+              <RepeatIcon />
+            )
+          }
+          variant="ghost"
+        />
+        <Button
+          size="xs"
+          colorScheme="blue"
+          onClick={onCopy}
+          ml={2}
+          isDisabled={hasCopied}
+          // align={"end"}
+          leftIcon={hasCopied ? <CheckIcon /> : <CopyIcon />}
+          variant="ghost"
+        />
+      </HStack>
     </Box>
   );
 }

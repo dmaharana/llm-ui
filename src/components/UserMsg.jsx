@@ -10,7 +10,7 @@ import {
 } from "@chakra-ui/react";
 import { CopyIcon, CheckIcon, EditIcon } from "@chakra-ui/icons";
 
-export function UserMsg({ msg, msgId, handleQueryUpdate }) {
+export function UserMsg({ msg, msgId, handleQueryUpdate, waitingResponse }) {
   const [isEditing, setIsEditing] = useState(false);
   const { hasCopied, onCopy } = useClipboard(msg);
 
@@ -44,6 +44,7 @@ export function UserMsg({ msg, msgId, handleQueryUpdate }) {
         <Button
           size="xs"
           colorScheme="blue"
+          isDisabled={waitingResponse}
           onClick={() => setIsEditing(!isEditing)}
           leftIcon={isEditing ? <CheckIcon /> : <EditIcon />}
           variant="ghost"
@@ -53,7 +54,7 @@ export function UserMsg({ msg, msgId, handleQueryUpdate }) {
           colorScheme="blue"
           onClick={onCopy}
           ml={2}
-          disabled={hasCopied}
+          isDisabled={hasCopied}
           leftIcon={hasCopied ? <CheckIcon /> : <CopyIcon />}
           variant="ghost"
         />

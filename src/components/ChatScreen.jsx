@@ -11,12 +11,14 @@ export default function ChatScreen() {
   const [model, setModel] = useState("");
   const initialAssistantMessage = "Assistant is typing...";
   const [waitingResponse, setWaitingResponse] = useState(false);
+  const [currentMsgId, setCurrentMsgId] = useState(1);
 
   // console.log(model);
 
   // handle resubmit for a message with given id
   const handleResubmit = async (id) => {
     // find the message with the given id
+    setCurrentMsgId(id);
     const message = conversation.find((msg) => msg.id === id);
     const newMessage = {
       id: id,
@@ -37,6 +39,8 @@ export default function ChatScreen() {
   };
 
   const handleQueryUpdate = (id, newQuery) => {
+    // find the message with the given id
+    setCurrentMsgId(id);
     const message = conversation.find((msg) => msg.id === id);
 
     if (message) {
@@ -54,11 +58,14 @@ export default function ChatScreen() {
     if (conversation.length > 0) {
       newMsgId = conversation[conversation.length - 1].id + 1;
     }
+    setCurrentMsgId(newMsgId);
+
     const newMessage = {
       id: newMsgId,
       user: query,
       model: model,
       assistant: initialAssistantMessage,
+      resTime: 0,
     };
 
     if (conversation.length > 0) {
@@ -128,6 +135,7 @@ export default function ChatScreen() {
       console.error(error);
     } finally {
       setWaitingResponse(false);
+      setCurrentMsgId(0);
     }
   };
 
@@ -156,6 +164,7 @@ export default function ChatScreen() {
                   <UserMsg
                     msg={m.user}
                     msgId={m.id}
+                    waitingResponse={waitingResponse}
                     handleQueryUpdate={handleQueryUpdate}
                   />
                 )}
@@ -164,9 +173,10 @@ export default function ChatScreen() {
                     msg={m.assistant}
                     name={m.model}
                     convId={m.id}
+                    resTime={m.resTime}
                     handleRepeat={handleResubmit}
                     waitingResponse={waitingResponse}
-                    resTime={m.resTime}
+                    currentMsgId={currentMsgId}
                   />
                 )}
               </>
@@ -188,7 +198,7 @@ export default function ChatScreen() {
             <Button
               colorScheme={"purple"}
               type="submit"
-              disabled={!query}
+              isDisabled={!query || waitingResponse}
               onSubmit={(e) => handleSubmit(e)}
               onClick={(e) => handleSubmit(e)}
             >
