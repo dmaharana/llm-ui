@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { listModelsApi } from "./Constants";
-import { Select, Spacer } from "@chakra-ui/react";
+import { Select } from "@chakra-ui/react";
 
 export default function ModelSelect({ model, setModel }) {
   const [models, setModels] = useState([]);
@@ -40,7 +40,6 @@ export default function ModelSelect({ model, setModel }) {
       ) : (
         <option value="unknown">Loading...</option>
       )}
-      <Spacer />
     </Select>
   );
 }

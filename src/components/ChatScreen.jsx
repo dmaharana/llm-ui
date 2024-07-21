@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { Box, Button, HStack, Text, Textarea, VStack } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Container,
+  HStack,
+  Text,
+  Textarea,
+  VStack,
+} from "@chakra-ui/react";
+import { BeatLoader } from "react-spinners";
 import { ChatIcon } from "@chakra-ui/icons";
 import { UserMsg } from "./UserMsg";
 import { AssistantMsg } from "./AssistantMsg";
@@ -9,7 +18,15 @@ export default function ChatScreen() {
   const [conversation, setConversation] = useState({});
   const [query, setQuery] = useState("");
   const [model, setModel] = useState("");
-  const initialAssistantMessage = "Assistant is typing...";
+  const initialAssistantMessage = (
+    <Button
+      isLoading
+      // colorScheme="orange"
+      // loadingText="Thinking..."
+      spinner={<BeatLoader size={8} color="red" />}
+      variant={"ghost"}
+    />
+  );
   const [waitingResponse, setWaitingResponse] = useState(false);
   const [currentMsgId, setCurrentMsgId] = useState(1);
 
@@ -24,13 +41,25 @@ export default function ChatScreen() {
       id: id,
       user: message.user,
       model: model,
-      assistant: initialAssistantMessage,
+      assistant: "Thinking...",
+      resTime: "",
     };
+
+    // setConversation((p) =>
+    //   p.map((m) => (m.id === id ? { ...m, newMessage } : m))
+    // );
+    // ? { ...m, assistant: newMessage.assistant, model: newMessage.model }
 
     setConversation((p) =>
       p.map((m) =>
         m.id === id
-          ? { ...m, assistant: newMessage.assistant, model: newMessage.model }
+          ? {
+              ...m,
+              user: newMessage.user,
+              model: newMessage.model,
+              assistant: newMessage.assistant,
+              resTime: newMessage.resTime,
+            }
           : m
       )
     );
@@ -40,7 +69,6 @@ export default function ChatScreen() {
 
   const handleQueryUpdate = (id, newQuery) => {
     // find the message with the given id
-    setCurrentMsgId(id);
     const message = conversation.find((msg) => msg.id === id);
 
     if (message) {
@@ -64,7 +92,9 @@ export default function ChatScreen() {
       id: newMsgId,
       user: query,
       model: model,
-      assistant: initialAssistantMessage,
+      // assistant: "",
+      assistant: "Thinking...",
+      // assistant: initialAssistantMessage,
       resTime: 0,
     };
 
@@ -79,7 +109,7 @@ export default function ChatScreen() {
   };
 
   const callLlmService = async (message) => {
-    console.log(conversation);
+    // console.log(conversation);
     // get user query for the message id
     const query = message.user;
     const msgId = message.id;
@@ -100,6 +130,24 @@ export default function ChatScreen() {
         },
         body: JSON.stringify(reqBody),
       });
+
+      if (!response.ok) {
+        const errBody = await response.json();
+        console.error(errBody);
+        setConversation((p) =>
+          p.map((m) =>
+            m.id === msgId
+              ? {
+                  ...m,
+                  assistant: errBody.message,
+                  model,
+                  resTime: "0s",
+                }
+              : m
+          )
+        );
+        return;
+      }
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -156,10 +204,11 @@ export default function ChatScreen() {
         >
           Vox
         </Text>
+        {initialAssistantMessage}
         <VStack h={"100vh"} w={"100%"} bg={"blue.150"} overflowY={"auto"}>
           {conversation.length > 0 ? (
-            conversation.map((m, index) => (
-              <>
+            conversation.map((m) => (
+              <Box key={m.id} w={"100%"}>
                 {m.user && (
                   <UserMsg
                     msg={m.user}
@@ -177,9 +226,10 @@ export default function ChatScreen() {
                     handleRepeat={handleResubmit}
                     waitingResponse={waitingResponse}
                     currentMsgId={currentMsgId}
+                    defaultMsg={initialAssistantMessage}
                   />
                 )}
-              </>
+              </Box>
             ))
           ) : (
             <Text fontSize={"lg"} color={"gray.600"} as={"i"}>
@@ -199,7 +249,7 @@ export default function ChatScreen() {
               colorScheme={"purple"}
               type="submit"
               isDisabled={!query || waitingResponse}
-              onSubmit={(e) => handleSubmit(e)}
+              // onSubmit={(e) => handleSubmit(e)}
               onClick={(e) => handleSubmit(e)}
             >
               <ChatIcon />
