@@ -1,15 +1,7 @@
 import { useState } from "react";
-import {
-  Box,
-  Button,
-  Container,
-  HStack,
-  Text,
-  Textarea,
-  VStack,
-} from "@chakra-ui/react";
+import { Box, Button, HStack, Text, Textarea, VStack } from "@chakra-ui/react";
+import { IoMdSend } from "react-icons/io";
 import { BeatLoader } from "react-spinners";
-import { ChatIcon } from "@chakra-ui/icons";
 import { UserMsg } from "./UserMsg";
 import { AssistantMsg } from "./AssistantMsg";
 import ModelSelect from "./ModelSelect";
@@ -18,6 +10,8 @@ export default function ChatScreen() {
   const [conversation, setConversation] = useState({});
   const [query, setQuery] = useState("");
   const [model, setModel] = useState("");
+  const [convHistory, setConvHistory] = useState([]);
+  const [convId, setConvId] = useState(1);
   const initialAssistantMessage = (
     <Button
       isLoading
@@ -160,30 +154,43 @@ export default function ChatScreen() {
         if (done) {
           break;
         }
-        const chunkValue = decoder.decode(value);
-        const cJson = JSON.parse(chunkValue);
-        // console.log(cJson);
-        text += cJson["response"];
-        const endTime = new Date().getTime();
-        const resTime = (endTime - startTime) / 1000;
-        setConversation((p) =>
-          p.map((m) =>
-            m.id === msgId
-              ? {
-                  ...m,
-                  assistant: text,
-                  model,
-                  resTime: `${resTime.toFixed(2)}s`,
-                }
-              : m
-          )
-        );
+
+        const chunkValue = decoder.decode(value, { stream: true });
+        try {
+          // const chunkValue = decoder.decode(value);
+          const cJson = JSON.parse(chunkValue);
+          // console.log(cJson);
+          text += cJson["response"];
+          const endTime = new Date().getTime();
+          const resTime = (endTime - startTime) / 1000;
+          setConversation((p) =>
+            p.map((m) =>
+              m.id === msgId
+                ? {
+                    ...m,
+                    assistant: text,
+                    model,
+                    resTime: `${resTime.toFixed(2)}s`,
+                  }
+                : m
+            )
+          );
+        } catch (error) {
+          console.error(error);
+          console.log(chunkValue);
+        }
       }
     } catch (error) {
       console.error(error);
     } finally {
       setWaitingResponse(false);
       setCurrentMsgId(0);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && e.ctrlKey) {
+      handleSubmit(e);
     }
   };
 
@@ -244,16 +251,19 @@ export default function ChatScreen() {
               placeholder="Enter your query here"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => handleKeyPress(e)}
             />
-            <Button
-              colorScheme={"purple"}
-              type="submit"
-              isDisabled={!query || waitingResponse}
-              // onSubmit={(e) => handleSubmit(e)}
-              onClick={(e) => handleSubmit(e)}
-            >
-              <ChatIcon />
-            </Button>
+            {query && (
+              <Button
+                colorScheme={"purple"}
+                type="submit"
+                variant={"ghost"}
+                isDisabled={!query || waitingResponse}
+                onClick={(e) => handleSubmit(e)}
+              >
+                <IoMdSend size={40} />
+              </Button>
+            )}
           </HStack>
           <HStack>
             <ModelSelect model={model} setModel={setModel} />

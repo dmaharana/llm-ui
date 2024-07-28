@@ -8,13 +8,21 @@ import {
   useClipboard,
   Button,
 } from "@chakra-ui/react";
-import { CopyIcon, CheckIcon, EditIcon } from "@chakra-ui/icons";
+import {
+  CopyIcon,
+  CheckIcon,
+  EditIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+} from "@chakra-ui/icons";
 export function UserMsg({ msg, msgId, handleQueryUpdate, waitingResponse }) {
   const [isEditing, setIsEditing] = useState(false);
   const { hasCopied, onCopy } = useClipboard(msg);
   const [isExpanded, setIsExpanded] = useState(false);
   const copyMessage = "Copy to clipboard";
   const editMessage = "Edit message";
+  const expandMessage = "Show more";
+  const collapseMessage = "Show less";
   const standardTextLen = 200;
 
   const toggleExpand = () => {
@@ -43,36 +51,33 @@ export function UserMsg({ msg, msgId, handleQueryUpdate, waitingResponse }) {
               onBlur={() => setIsEditing(false)}
             />
           ) : (
-            // <ReactMarkdown
-            //   components={ChakraUIRenderer()}
-            //   children={msg}
-            //   value={msg}
-            //   skipHtml
-            //   align="left"
-            //   onChange={(e) => handleQueryUpdate(msgId, e.target.value)}
-            //   onBlur={() => setIsEditing(false)}
-            // />
-
             <>
-              {/* <Text>{msg}</Text> */}
-              {msg.length > 80 && !isExpanded && (
+              {msg.length > standardTextLen && !isExpanded ? (
                 <Text mt={2} noOfLines={3}>
                   {msg.slice(0, standardTextLen) + "..."}
                 </Text>
+              ) : (
+                <Text mt={2}>{msg}</Text>
               )}
 
-              {isExpanded && <Text mt={2}>{msg}</Text>}
-
-              {msg.length > standardTextLen && (
+              {msg.length > standardTextLen ? (
                 <Button
-                  size="xs"
+                  size="sm"
                   colorScheme="blue"
                   onClick={toggleExpand}
                   variant="ghost"
                 >
-                  {isExpanded ? "Show less" : "Show more"}
+                  {isExpanded ? (
+                    <Tooltip label={collapseMessage}>
+                      <ChevronUpIcon />
+                    </Tooltip>
+                  ) : (
+                    <Tooltip label={expandMessage}>
+                      <ChevronDownIcon />
+                    </Tooltip>
+                  )}
                 </Button>
-              )}
+              ) : null}
             </>
           )}
         </Box>

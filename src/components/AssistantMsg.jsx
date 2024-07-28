@@ -53,7 +53,7 @@ export function AssistantMsg({
           </Text>
           <ReactMarkdown
             components={ChakraUIRenderer()}
-            skipHtml={true}
+            skiphtml="true"
             align="left"
             sx={{
               p: "20px",
@@ -90,7 +90,7 @@ export function AssistantMsg({
           }
           variant="ghost"
         />
-        {waitingResponse || currentMsgId === convId ? null : (
+        {waitingResponse && currentMsgId === convId ? null : (
           <Button
             size="xs"
             colorScheme="blue"
