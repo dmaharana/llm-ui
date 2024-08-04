@@ -15,7 +15,7 @@ export default function ModelSelect({ model, setModel }) {
         return;
       }
 
-      console.log(body["message"]);
+      // console.log(body["message"]);
       setModels(body["data"].models);
       setModel(body["data"].models[0].name);
     }
@@ -28,7 +28,7 @@ export default function ModelSelect({ model, setModel }) {
       size={"sm"}
       variant={"filled"}
       textColor={"orange.500"}
-      alignContent={"center"}
+      maxW={"250px"}
       onChange={(e) => setModel(e.target.value)}
     >
       {models.length > 0 ? (

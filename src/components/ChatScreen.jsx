@@ -1,15 +1,31 @@
 import { useState } from "react";
-import { Box, Button, HStack, Text, Textarea, VStack } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  HStack,
+  Spacer,
+  Text,
+  Textarea,
+  VStack,
+} from "@chakra-ui/react";
 import { IoMdSend } from "react-icons/io";
 import { BeatLoader } from "react-spinners";
 import { UserMsg } from "./UserMsg";
 import { AssistantMsg } from "./AssistantMsg";
+import DownloadChat from "./DownloadChat";
 import ModelSelect from "./ModelSelect";
+import ChatSettings from "./ChatSettings";
+import { DEFAULT_MESSAGES } from "./Constants";
+import ClearChat from "./ClearChat";
 
 export default function ChatScreen() {
-  const [conversation, setConversation] = useState({});
+  const [conversation, setConversation] = useState([]);
   const [query, setQuery] = useState("");
   const [model, setModel] = useState("");
+  const [systemPrompt, setSystemPrompt] = useState(
+    DEFAULT_MESSAGES.SYSTEM_PROMPT
+  );
+  const [includeHistory, setIncludeHistory] = useState(true);
   const [convHistory, setConvHistory] = useState([]);
   const [convId, setConvId] = useState(1);
   const initialAssistantMessage = (
@@ -109,12 +125,22 @@ export default function ChatScreen() {
     const msgId = message.id;
     const startTime = new Date().getTime();
 
-    const reqBody = {
+    let reqBody = {
       model: model,
       prompt: query,
       stream: true,
+      includeHistory: includeHistory,
+      systemPrompt: systemPrompt,
     };
 
+    if (conversation.length > 0 && includeHistory) {
+      reqBody = {
+        ...reqBody,
+        conversation: conversation,
+      };
+    }
+
+    // console.log(JSON.stringify(reqBody));
     try {
       setWaitingResponse(true);
       const response = await fetch("/api/chat", {
@@ -159,8 +185,11 @@ export default function ChatScreen() {
         try {
           // const chunkValue = decoder.decode(value);
           const cJson = JSON.parse(chunkValue);
+
           // console.log(cJson);
-          text += cJson["response"];
+          if (cJson["response"]) {
+            text += cJson["response"];
+          }
           const endTime = new Date().getTime();
           const resTime = (endTime - startTime) / 1000;
           setConversation((p) =>
@@ -168,6 +197,7 @@ export default function ChatScreen() {
               m.id === msgId
                 ? {
                     ...m,
+                    systemPrompt,
                     assistant: text,
                     model,
                     resTime: `${resTime.toFixed(2)}s`,
@@ -199,19 +229,22 @@ export default function ChatScreen() {
   };
 
   return (
-    <Box bg={"red.50"}>
-      <VStack h={"100vh"} bg={"gray.50"} py={4} px={2}>
+    <Box>
+      <VStack h={"90vh"} bg={"gray.50"} py={4} px={2} borderRadius={"2rem"}>
         <Text
-          fontSize={"2xl"}
+          fontFamily={"Gothic"}
+          fontSize={"2.0rem"}
           fontWeight={"bold"}
           textAlign={"center"}
-          bg={"teal.50"}
+          color={"#000000"}
+          bg={"#FFD7BE"}
           w={"100%"}
           p={2}
+          borderRadius={"2rem"}
+          textShadow={"2px 2px 4px #000000"}
         >
           Vox
         </Text>
-        {initialAssistantMessage}
         <VStack h={"100vh"} w={"100%"} bg={"blue.150"} overflowY={"auto"}>
           {conversation.length > 0 ? (
             conversation.map((m) => (
@@ -239,19 +272,30 @@ export default function ChatScreen() {
               </Box>
             ))
           ) : (
-            <Text fontSize={"lg"} color={"gray.600"} as={"i"}>
-              Start a conversation...
-            </Text>
+            <Box w={"100%"} bg={"purple.50"}>
+              <VStack h={"100vh"} w={"100%"} bg={"blue.150"} overflowY={"auto"}>
+                {initialAssistantMessage}
+
+                <Text fontSize={"lg"} color={"gray.600"} as={"i"}>
+                  Start a conversation...
+                </Text>
+              </VStack>
+            </Box>
           )}
         </VStack>
 
         <Box w={"100%"} bg={"green.50"}>
           <HStack bg={"green.50"}>
             <Textarea
-              placeholder="Enter your query here"
+              isDisabled={waitingResponse}
+              placeholder="Enter your query here, Ctrl+Enter to send"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => handleKeyPress(e)}
+              borderRadius={"2rem"}
+              h={"70%"}
+              // resize={"none"}
+              paddingTop={"2rem"}
             />
             {query && (
               <Button
@@ -266,10 +310,27 @@ export default function ChatScreen() {
             )}
           </HStack>
           <HStack>
+            <ChatSettings
+              systemPrompt={systemPrompt}
+              setSystemPrompt={setSystemPrompt}
+              includeHistory={includeHistory}
+              setIncludeHistory={setIncludeHistory}
+              waitingResponse={waitingResponse}
+            />
             <ModelSelect model={model} setModel={setModel} />
-            <Button alignSelf={"flex-end"} onClick={handleClearChat}>
-              Clear
-            </Button>
+            <Spacer />
+            {conversation.length > 0 && (
+              <DownloadChat
+                conversation={conversation}
+                waitingResponse={waitingResponse}
+              />
+            )}
+            {conversation.length > 0 && (
+              <ClearChat
+                handleClearChat={handleClearChat}
+                waitingResponse={waitingResponse}
+              />
+            )}
           </HStack>
         </Box>
       </VStack>
